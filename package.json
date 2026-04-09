@@ -2,17 +2,35 @@
   "name": "figletpreview",
   "module": "figletPreview.ts",
   "type": "module",
+  "scripts": {
+    "format": "eslint . --fix"
+  },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.11.1",
+    "@types/commander": "^2.12.2",
+    "@types/eslint__js": "^8.42.3",
     "@types/figlet": "^1.5.8",
     "@types/inquirer": "^9.0.7",
-    "bun-types": "latest"
+    "@types/node": "^22.7.4",
+    "@typescript-eslint/parser": "^8.7.0",
+    "bun-types": "^1.1.29",
+    "eslint": "^9.11.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.6.0",
+    "globals": "^15.9.0",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@figliolia/chalk-animation": "^1.0.3",
+    "chalk-animation": "^2.0.3",
+    "commander": "^12.1.0",
+    "eslint-config-prettier": "^9.1.0",
     "figlet": "^1.7.0",
-    "inquirer": "^9.2.12"
-  }
+    "inquirer": "^11.1.0"
+  },
+  "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb"
 }

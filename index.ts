@@ -1,6 +1,10 @@
-import figlet from "figlet";
-import { ChalkAnimation } from "@figliolia/chalk-animation";
-const goodFontList: string[] = [
+// @ts-ignore
+import ChalkAnimation from "chalk-animation";
+import { Command } from "commander";
+import figlet, { Fonts } from "figlet";
+import * as fs from "node:fs";
+import * as path from "node:path";
+const goodFontList: Set<string> = new Set([
   "Electronic",
   "Ghoulish",
   "Bloody",
@@ -64,13 +68,57 @@ const goodFontList: string[] = [
   "Modular",
   "Roman",
   "SL Script",
-];
-const skipFontList = ["Bear", "Twisted", "Chiseled"];
+]);
+const skipFontList: Set<string> = new Set(["Bear", "Twisted", "Chiseled"]);
+
+// Cooldown configuration
+const COOLDOWN_FILE = path.join(process.cwd(), "figlet-cooldown.json");
+const DEFAULT_COOLDOWN_HOURS = 1;
+
+interface CooldownData {
+  lastRun: number;
+}
+
+function readCooldownData(): CooldownData | null {
+  try {
+    if (!fs.existsSync(COOLDOWN_FILE)) {
+      return null;
+    }
+    const data = fs.readFileSync(COOLDOWN_FILE, "utf8");
+    return JSON.parse(data) as CooldownData;
+  } catch (error) {
+    console.error("Error reading cooldown data:", error);
+    return null;
+  }
+}
+
+function writeCooldownData(timestamp: number): void {
+  try {
+    const data: CooldownData = { lastRun: timestamp };
+    fs.writeFileSync(COOLDOWN_FILE, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error("Error writing cooldown data:", error);
+  }
+}
+
+function isCooldownExpired(cooldownHours: number): boolean {
+  const cooldownData = readCooldownData();
+  if (!cooldownData) {
+    return true; // No previous run, so cooldown is expired
+  }
+
+  const now = Date.now();
+  const cooldownMs = cooldownHours * 60 * 60 * 1000;
+  const timeSinceLastRun = now - cooldownData.lastRun;
+
+  return timeSinceLastRun >= cooldownMs;
+}
+
 function applyRandomFigletFont(text: string) {
-  const fontList = figlet.fontsSync();
-  const filteredFontList: string[] = fontList
-    .filter((font) => !skipFontList.includes(font))
-    .filter((font) => goodFontList.includes(font));
+  const fontList: Fonts[] = figlet.fontsSync();
+  const filteredFontList: Fonts[] = fontList
+    .filter((font) => !skipFontList.has(font))
+    .filter((font) => goodFontList.has(font));
 
   const fontIndex = Math.floor(Math.random() * filteredFontList.length);
   const font = filteredFontList[fontIndex];
@@ -107,12 +155,7 @@ function applyRandomAnimation(previewText: string) {
       timeout: lengthDependentTimeout,
       type: "karaoke",
     },
-    // {
-    //   animationFunction: ChalkAnimation.pulse,
-    //   speed: 2,
-    //   timeout: 1285,
-    //   type: "pulse",
-    // },
+
     {
       animationFunction: ChalkAnimation.radar,
       speed: 2,
@@ -120,22 +163,48 @@ function applyRandomAnimation(previewText: string) {
       type: "pulse",
     },
   ];
-  // const animationIndex = Math.floor(Math.random() * animationList.length);
-  const animationIndex = 3;
+  const animationIndex = Math.floor(Math.random() * animationList.length);
   const { animationFunction, speed, timeout, type } =
     animationList[animationIndex];
   return { animation: animationFunction(previewText, speed), timeout, type };
 }
-async function showFont(text: string = "") {
+
+async function showFont(text = "", useCoolDown = true, cooldownHours = DEFAULT_COOLDOWN_HOURS) {
+  if (useCoolDown && !isCooldownExpired(cooldownHours)) {
+    const cooldownData = readCooldownData();
+    if (cooldownData) {
+      const now = Date.now();
+      const timeSinceLastRun = now - cooldownData.lastRun;
+      const remainingMs = (cooldownHours * 60 * 60 * 1000) - timeSinceLastRun;
+      const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+      console.log(`Cooldown active. Please wait ${remainingMinutes} more minutes.`);
+    }
+    return;
+  }
+
   const { figletText, font } = applyRandomFigletFont(text);
   const { animation, timeout, type } = applyRandomAnimation(figletText);
   animation.start();
   setTimeout(() => {
-    // const rowCount = figletText.split("\n")[0].length;
-    // const rowRatio = rowCount / (timeout / 1000);
     animation.stop();
     console.log(`${type} - ${font}`);
   }, timeout);
+
+  // Update cooldown timestamp after successful execution
+  if (useCoolDown) {
+    writeCooldownData(Date.now());
+  }
 }
 
-showFont("Fresh");
+const program = new Command();
+
+program
+  .option("-t, --text <text>", "The text to display", "Fresh")
+  .option("-f, --font <font>", "The font to use")
+  .option("-c, --cooldown <hours>", "Cooldown period in hours", DEFAULT_COOLDOWN_HOURS.toString())
+  .option("--no-cooldown", "Disable cooldown check")
+  .action((options: any) => {
+    const cooldownHours = Number.parseFloat(options.cooldown);
+    showFont(options.text, options.cooldown, cooldownHours);
+  })
+  .parse(process.argv);
