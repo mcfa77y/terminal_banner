@@ -1,10 +1,9 @@
-// @ts-ignore
 import ChalkAnimation from "chalk-animation";
 import { Command } from "commander";
 import figlet, { Fonts } from "figlet";
 import * as fs from "node:fs";
 import * as path from "node:path";
-const goodFontList: Set<string> = new Set([
+const goodFontList = new Set<string>([
   "Electronic",
   "Ghoulish",
   "Bloody",
@@ -69,7 +68,7 @@ const goodFontList: Set<string> = new Set([
   "Roman",
   "SL Script",
 ]);
-const skipFontList: Set<string> = new Set(["Bear", "Twisted", "Chiseled"]);
+const skipFontList = new Set<string>(["Bear", "Twisted", "Chiseled"]);
 
 // Cooldown configuration
 const COOLDOWN_FILE = path.join(process.cwd(), "figlet-cooldown.json");
